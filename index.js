@@ -52,6 +52,7 @@ app.post("/register", uploadMiddleware.single('avatar'), async (req, res) => {
       });
       res.json(userDoc);
     } catch (e) {
+      console.log(e)
       res.status(400).json("username already exists ! Please try another username ");
     }
   });
