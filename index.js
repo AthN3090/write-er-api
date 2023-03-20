@@ -19,7 +19,7 @@ const PORT = env.PORT || 8000
 // password - XYEeEk4IVDD8r0dm
 // mongodb+srv://uipost:XYEeEk4IVDD8r0dm@cluster0.93vzfc1.mongodb.net/?retryWrites=true&w=majority
 
-app.use(cors({ credentials: true, origin: "http://localhost:5173" }))
+app.use(cors({ credentials: true, origin: "https://write-er-app.vercel.app" }))
 app.use(express.json())
 app.use(cookieParser())
 app.use('/uploads', express.static(__dirname + '/uploads'))
