@@ -6,10 +6,22 @@ const Post = require('./models/Post')
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
 const cookieParser = require('cookie-parser')
-const multer = require('multer')
+const multer = require('multer');
+const path = require('path')
+
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'uploads/')
+  },
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + path.extname(file.originalname)) //Appending extension
+  }
+})
+
+const uploadMiddleware = multer({ storage: storage });
 const fs = require('fs')
 const { env } = require('process')
-const uploadMiddleware = multer({ dest: 'uploads/' })
+// const uploadMiddleware = multer({ dest: 'uploads/' })
 const saltRounds = 10
 const app = express()
 const secret = 'asdinkdfnvdoasdkdfvnlssafirql'
@@ -19,7 +31,7 @@ const PORT = env.PORT || 8000
 // password - XYEeEk4IVDD8r0dm
 // mongodb+srv://uipost:XYEeEk4IVDD8r0dm@cluster0.93vzfc1.mongodb.net/?retryWrites=true&w=majority
 
-app.use(cors({ credentials: true, origin: "https://write-er-app.vercel.app" }))
+app.use(cors({ credentials: true, origin: ["https://write-er-app.vercel.app","http://localhost:5173"] }))
 app.use(express.json())
 app.use(cookieParser())
 app.use('/uploads', express.static(__dirname + '/uploads'))
@@ -32,17 +44,19 @@ app.post("/register", uploadMiddleware.single('avatar'), async (req, res) => {
   let newPath = null
   //if avatar is not a property in req.body then it means we a a file upload
   if(!avatar) {
-    const parts = req.file.originalname.split('.')
-    const ext = parts[parts.length -1]
-    newPath= req.file.path + '.' + ext
-    fs.renameSync(req.file.path, newPath)
+    newPath= req.file.path
+    // const parts = req.file.originalname.split('.')
+    // const ext = parts[parts.length -1]
+    // newPath= req.file.path + '.' + ext
+    // fs.renameSync(req.file.path, newPath)
   }else{
     newPath = 'default'
   }
-
+  console.log(newPath)
   bcrypt.hash(password, saltRounds, async (err, hash) => {
     err ? console.log(err) : console.log(hash);
     try {
+      console.log()
       const userDoc = await User.create({
         username,
         fullname,
@@ -124,10 +138,11 @@ app.get('/post', async (req, res) => {
 app.put('/post',uploadMiddleware.single('cover'), async (req, res)=> {
   let newPath = null
   if (req.file) {
-    const parts = req.file.originalname.split(".");
-    const ext = parts[parts.length - 1];
-    newPath = req.file.path + "." + ext;
-    fs.renameSync(req.file.path, newPath);
+    // const parts = req.file.originalname.split(".");
+    // const ext = parts[parts.length - 1];
+    // newPath = req.file.path + "." + ext;
+    // fs.renameSync(req.file.path, newPath);
+    newPath = req.file.path
   }
   const {token} = req.cookies
   jwt.verify(token, secret, {}, async (err,  result) =>{
@@ -177,11 +192,11 @@ app.get('/filter/:topic', async (req, res) => {
 })
 
 app.post('/newpost', uploadMiddleware.single('cover') , async (req, res) => {
-  const parts = req.file.originalname.split('.')
-  const ext = parts[parts.length -1]
-  const newPath = req.file.path + '.' + ext
-  fs.renameSync(req.file.path, newPath)
-
+  // const parts = req.file.originalname.split('.')
+  // const ext = parts[parts.length -1]
+  // const newPath = req.file.path + '.' + ext
+  // fs.renameSync(req.file.path, newPath)
+  const newPath = req.file.path
   const {title, body, author, topic} = req.body
   const postDoc = await Post.create({
     title,
