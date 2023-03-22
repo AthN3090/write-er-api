@@ -1,3 +1,4 @@
+require('dotenv').config()
 const express = require('express')
 const cors = require('cors')
 const mongoose = require('mongoose')
@@ -8,10 +9,23 @@ const jwt = require('jsonwebtoken')
 const cookieParser = require('cookie-parser')
 const multer = require('multer');
 const path = require('path')
+const AWS = require("aws-sdk");
+
+
+const region = process.env.AWS_REGION
+const accessKeyId = process.env.AWS_ACCESS_KEY_ID
+const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY
+const sessionToken = process.env.AWS_SESSION_TOKEN
+const s3 = new AWS.S3({
+  region,
+  accessKeyId,
+  secretAccessKey,
+  sessionToken
+})
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, 'uploads/')
+    cb(null, 'tmp/')
   },
   filename: function (req, file, cb) {
     cb(null, Date.now() + path.extname(file.originalname)) //Appending extension
@@ -26,29 +40,27 @@ const saltRounds = 10
 const app = express()
 const secret = 'asdinkdfnvdoasdkdfvnlssafirql'
 const PORT = env.PORT || 8000
-// mongodbb credentials
-// username - uipost
-// password - XYEeEk4IVDD8r0dm
-// mongodb+srv://uipost:XYEeEk4IVDD8r0dm@cluster0.93vzfc1.mongodb.net/?retryWrites=true&w=majority
 
 app.use(cors({ credentials: true, origin: ["https://write-er-app.vercel.app","http://localhost:5173"] }))
 app.use(express.json())
 app.use(cookieParser())
-app.use('/uploads', express.static(__dirname + '/uploads'))
+app.use('/tmp', express.static(__dirname + '/tmp'))
 mongoose.connect('mongodb+srv://uipost:XYEeEk4IVDD8r0dm@cluster0.93vzfc1.mongodb.net/?retryWrites=true&w=majority')
 
 app.post("/register", uploadMiddleware.single('avatar'), async (req, res) => {
   const {avatar} = req.body
   const { username, password , headline, fullname} = req.body;
-
   let newPath = null
   //if avatar is not a property in req.body then it means we a a file upload
   if(!avatar) {
-    newPath= req.file.path
-    // const parts = req.file.originalname.split('.')
-    // const ext = parts[parts.length -1]
-    // newPath= req.file.path + '.' + ext
-    // fs.renameSync(req.file.path, newPath)
+    newPath= req.file.filename
+    const fileStream = fs.createReadStream(req.file.path)
+    const image = await s3.upload({
+      Bucket: "cyclic-wild-pink-macaw-garb-ap-northeast-1",
+      Body: fileStream,
+      Key: req.file.filename,
+    }).promise()
+
   }else{
     newPath = 'default'
   }
@@ -72,6 +84,16 @@ app.post("/register", uploadMiddleware.single('avatar'), async (req, res) => {
   });
 });
 
+app.get('/images/:key', (req, res) => {
+  const {key} = req.params
+  const readStream = s3.getObject({
+    Key: key,
+    Bucket: "cyclic-wild-pink-macaw-garb-ap-northeast-1",
+  }).createReadStream()
+  readStream.pipe(res)
+
+
+})
 app.post('/login', async (req, res) => {
   const {username, password} = req.body
   const userDoc = await User.findOne({username})
@@ -142,7 +164,14 @@ app.put('/post',uploadMiddleware.single('cover'), async (req, res)=> {
     // const ext = parts[parts.length - 1];
     // newPath = req.file.path + "." + ext;
     // fs.renameSync(req.file.path, newPath);
-    newPath = req.file.path
+    newPath = req.file.filename
+    const fileStream = fs.createReadStream(req.file.path)
+    const image = await s3.upload({
+      Bucket: "cyclic-wild-pink-macaw-garb-ap-northeast-1",
+      Body: fileStream,
+      Key: req.file.filename,
+    }).promise()
+
   }
   const {token} = req.cookies
   jwt.verify(token, secret, {}, async (err,  result) =>{
@@ -196,7 +225,14 @@ app.post('/newpost', uploadMiddleware.single('cover') , async (req, res) => {
   // const ext = parts[parts.length -1]
   // const newPath = req.file.path + '.' + ext
   // fs.renameSync(req.file.path, newPath)
-  const newPath = req.file.path
+  const newPath = req.file.filename
+  const fileStream = fs.createReadStream(req.file.path)
+    const image = await s3.upload({
+      Bucket: "cyclic-wild-pink-macaw-garb-ap-northeast-1",
+      Body: fileStream,
+      Key: req.file.filename,
+    }).promise()
+
   const {title, body, author, topic} = req.body
   const postDoc = await Post.create({
     title,
@@ -207,6 +243,9 @@ app.post('/newpost', uploadMiddleware.single('cover') , async (req, res) => {
   })
   res.json("ok")
 })
+
+
+
 app.listen(PORT,()=>{
     console.log("Server is running")
 })
