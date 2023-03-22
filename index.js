@@ -85,6 +85,7 @@ app.get('/images/:key', (req, res) => {
     Key: key,
     Bucket: "cyclic-wild-pink-macaw-garb-ap-northeast-1",
   }).createReadStream()
+  res.set('Content-Type','image/jpeg')
   readStream.pipe(res)
 
 
