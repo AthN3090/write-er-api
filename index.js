@@ -20,7 +20,7 @@ const s3 = new AWS.S3()
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, 'tmp/')
+    cb(null, '/tmp')
   },
   filename: function (req, file, cb) {
     cb(null, Date.now() + path.extname(file.originalname)) //Appending extension
@@ -40,6 +40,7 @@ app.use(cors({ credentials: true, origin: ["https://write-er-app.vercel.app","ht
 app.use(express.json())
 app.use(cookieParser())
 app.use('/tmp', express.static(__dirname + '/tmp'))
+app.use('/tmp', express.static('tmp'))
 mongoose.connect('mongodb+srv://uipost:XYEeEk4IVDD8r0dm@cluster0.93vzfc1.mongodb.net/?retryWrites=true&w=majority')
 
 app.post("/register", uploadMiddleware.single('avatar'), async (req, res) => {
