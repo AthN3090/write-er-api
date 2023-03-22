@@ -222,6 +222,7 @@ app.post('/newpost', uploadMiddleware.single('cover') , async (req, res) => {
   // const ext = parts[parts.length -1]
   // const newPath = req.file.path + '.' + ext
   // fs.renameSync(req.file.path, newPath)
+  if(!req.file) return res.status(400).json("no cover given")
   const newPath = req.file.filename
   const fileStream = fs.createReadStream(req.file.path)
     const image = await s3.upload({
